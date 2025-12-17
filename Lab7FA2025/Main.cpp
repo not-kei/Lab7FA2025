@@ -35,6 +35,9 @@ void attack();
 void surrender();
 void computerAttack();
 
+bool allShipsSunk(char board[boardSize][boardSize]);
+void checkWinLoss(bool& gameOver);
+
 //Global boards
 char playerBoard[boardSize][boardSize];
 char playerAttackBoard[boardSize][boardSize];
@@ -261,6 +264,7 @@ void playingGame()
 
 	while (!isGameOver)
 	{
+		std::cout << "Your attacks:\n";
 		displayBoard(playerAttackBoard);
 
 		int choice;
@@ -270,7 +274,11 @@ void playingGame()
 		switch (choice)
 		{
 		case 1: attack();
+			checkWinLoss(isGameOver);
+			if (isGameOver) 
+				break;
 			computerAttack();
+			checkWinLoss(isGameOver);
 			break;
 		case 2: std::cout << "Your board:\n";
 			displayBoard(playerBoard);
@@ -361,6 +369,36 @@ void computerAttack()
 		}
 
 		attacked = true;
+	}
+}
+
+bool allShipsSunk(char board[boardSize][boardSize])
+{
+	for (int i = 0; i < boardSize; i++)
+	{
+		for (int j = 0; j < boardSize; j++)
+		{
+			if (board[i][j] == SHIP)
+			{
+				return false;
+			}
+		}
+	}
+
+	return true;
+}
+
+void checkWinLoss(bool& gameOver)
+{
+	if (allShipsSunk(computerBoard))
+	{
+		std::cout << "Congrats! All enemy ships have been sunk!\n";
+		gameOver = true;
+	}
+	else if (allShipsSunk(playerBoard))
+	{
+		std::cout << "\n You lost! All your ships have been sunk.\n";
+		gameOver = true;
 	}
 }
 
