@@ -260,6 +260,8 @@ void playingGame()
 
 	while (!isGameOver)
 	{
+		displayBoard(playerAttackBoard);
+
 		int choice;
 		std::cout << "\nChoose an option:\n 1. Fire an attack\n 2. View your board\n 3.Surrender\n";
 		std::cin >> choice;
@@ -268,7 +270,8 @@ void playingGame()
 		{
 		case 1: attack();
 			break;
-		case 2: displayBoard(playerBoard);
+		case 2: std::cout << "Your board:\n";
+			displayBoard(playerBoard);
 			break;
 		case 3: surrender();
 			isGameOver = true;
