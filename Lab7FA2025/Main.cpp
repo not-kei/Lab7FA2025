@@ -33,6 +33,7 @@ void placePlayerShips();
 
 void attack();
 void surrender();
+void computerAttack();
 
 //Global boards
 char playerBoard[boardSize][boardSize];
@@ -269,6 +270,7 @@ void playingGame()
 		switch (choice)
 		{
 		case 1: attack();
+			computerAttack();
 			break;
 		case 2: std::cout << "Your board:\n";
 			displayBoard(playerBoard);
@@ -292,7 +294,7 @@ void attack()
 	int row, col;
 	bool hasFired = false; //controls the while loop
 
-	std::cout << "Enter the row and column to attaack (1-10)" << std::endl;
+	std::cout << "Enter the row and column to attack (1-10)" << std::endl;
 
 	while (!hasFired)
 	{
@@ -326,6 +328,39 @@ void attack()
 		}
 
 		hasFired = true;
+	}
+}
+
+void computerAttack()
+{
+	int row, col;
+	bool attacked = false;
+
+	std::cout << "\nComputer is attacking...\n";
+
+	while (!attacked)
+	{
+		row = rand() % boardSize;
+		col = rand() % boardSize;
+
+		if (computerAttackBoard[row][col] == HIT || computerAttackBoard[row][col] == MISS)
+		{
+			continue;
+		}
+
+		if (computerAttackBoard[row][col] == SHIP)
+		{
+			std::cout << "Computer hit your ship at (" << row + 1 << ", " << col + 1 << ")!\n";
+			playerBoard[row][col] = HIT;
+			computerAttackBoard[row][col] = HIT;
+		}
+		else
+		{
+			std::cout << "Computer missed at (" << row + 1 << ", " << col + 1 << ")!\n";
+			computerAttackBoard[row][col] = MISS;
+		}
+
+		attacked = true;
 	}
 }
 
