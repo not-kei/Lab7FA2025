@@ -296,9 +296,9 @@ void attack()
 
 	while (!hasFired)
 	{
-		std::cin >> row >> col;
-		row--;
+		std::cin >> col >> row;
 		col--;
+		row--;
 
 		if (row < 0 || row >= boardSize || col < 0 || col >= boardSize)
 		{
@@ -309,19 +309,23 @@ void attack()
 		if (computerBoard[row][col] == HIT || computerBoard[row][col] == MISS)
 		{
 			std::cout << "You already attacked this location, try again:";
+			continue;
 		}
-		else if (computerBoard[row][col] == SHIP)
+
+		if (computerBoard[row][col] == SHIP)
 		{
 			std::cout << "Hit!\n";
 			computerBoard[row][col] = HIT;
-			hasFired = true;
+			playerAttackBoard[row][col] = HIT;
 		}
 		else 
 		{
 			std::cout << "Miss!\n";
 			computerBoard[row][col] = MISS;
-			hasFired = true;
+			playerAttackBoard[row][col] = MISS;
 		}
+
+		hasFired = true;
 	}
 }
 
