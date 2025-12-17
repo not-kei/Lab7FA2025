@@ -1,9 +1,9 @@
 /*
-	Olivia Dodds
-	C++ FA2025
-	Due: Dec 16th, 2025
-	Lab 7 Battleship
-	Play against the computer in a game of Battleship
+    Olivia Dodds
+    C++ FA2025
+    Due: Dec 16th, 2025
+    Lab 7 Battleship
+    Play against the computer in a game of Battleship
 */
 
 #include <iostream>
@@ -11,403 +11,421 @@
 #include <cstdlib>
 #include <ctime>
 
-//Constants
+using namespace std;
+
 const int boardSize = 10;
 const char WATER = '~';
 const char SHIP = '#';
 const char HIT = 'H';
 const char MISS = 'M';
 
-//Function Prototypes
+// Function Prototypes
 void startingGame();
-void playingGame();
-
-void initializeBoard(char board[boardSize][boardSize]);
-void displayBoard(const char board[boardSize][boardSize]);
-
-bool canPlaceShip(char board[boardSize][boardSize], int row, int col, int size, char orientation);
-
+void arrayInitializer(char board[boardSize][boardSize]);
+void displayBoard(char board[boardSize][boardSize]);
 void placeShip(char board[boardSize][boardSize], int row, int col, int size, char orientation);
-void placeComputerShips();
+bool canPlaceShip(char board[boardSize][boardSize], int row, int col, int size, char orientation);
 void placePlayerShips();
-
+void placeComputerShips();
+void playingGame();
 void attack();
-void surrender();
 void computerAttack();
-
+void surrender();
 bool allShipsSunk(char board[boardSize][boardSize]);
 void checkWinLoss(bool& gameOver);
 
-//Global boards
+// Global Boards
 char playerBoard[boardSize][boardSize];
 char playerAttackBoard[boardSize][boardSize];
 char computerBoard[boardSize][boardSize];
 char computerAttackBoard[boardSize][boardSize];
 
+// Ship sizes
+const int shipSizes[5] = { 5, 4, 3, 3, 2 };
+const string shipNames[5] = { "Carrier", "Battleship", "Cruiser", "Submarine", "Destroyer" };
+
+// Win/Loss tracking
+int playerWins = 0;
+int computerWins = 0;
+
 int main()
 {
-	srand(time(0));
+    srand(time(0)); // Seed random generator
 
-	std::cout << "Welcome to Battleship! Here is your board. \n" << std::endl;
+    cout << "Welcome to Battleship!\n";
 
-	bool playAgain = true;
+    bool playAgain = true;
 
-	while (playAgain)
-	{
-		startingGame();
-		playingGame();
+    while (playAgain)
+    {
+        startingGame();
+        playingGame();
 
-		std::string answer;
-		std::cout << "Play again? (yes/no): ";
-		std::cin >> answer;
+        cout << "\nCurrent Stats - Wins: " << playerWins << " | Losses: " << computerWins << "\n";
 
-		playAgain = (answer == "yes" || answer == "Yes");
-	}
+        string answer;
+        cout << "\nPlay again? (yes/no): ";
+        cin >> answer;
+        playAgain = (answer == "yes" || answer == "Yes");
+    }
 
-	return 0;
+    cout << "Thank you for playing Battleship!\n";
+    return 0;
 }
 
 /*
-	Preconditions: None
-	Postconditions: Displays user's board and initializes the other boards
-	Desc: Initializes all arrays, and formats user's playing board, displaying it for ship placement
+Preconditions: None
+Postconditions: Initializes all boards and places ships for player and computer
+Description: Sets up the game by initializing boards and placing ships
 */
 void startingGame()
 {
-	//initializing boards
-	initializeBoard(playerBoard);
-	initializeBoard(playerAttackBoard);
-	initializeBoard(computerBoard);
-	initializeBoard(computerAttackBoard);
+    arrayInitializer(playerBoard);
+    arrayInitializer(playerAttackBoard);
+    arrayInitializer(computerBoard);
+    arrayInitializer(computerAttackBoard);
 
-	placePlayerShips();
-	placeComputerShips();
+    cout << "\nYour Board:\n";
+    displayBoard(playerBoard);
+
+    placePlayerShips();
+    placeComputerShips();
 }
 
 /*
-	Preconditions: Must have a char array
-	Postconditions: Initializes the array
-	Desc: Takes an array and fills it with '~' for the water
+Preconditions: A 10x10 char array
+Postconditions: Fills the board with WATER symbol
+Description: Initializes the board with '~' for water
 */
-void initializeBoard(char curArray_[boardSize][boardSize])
+void arrayInitializer(char board[boardSize][boardSize])
 {
-	for (int i = 0; i < 10; i++)
-	{
-		for (int j = 0; j < 10; j++)
-		{
-			curArray_[i][j] = WATER;
-		}
-	}
-}
-
-void displayBoard(const char board[boardSize][boardSize])
-{
-	std::cout << "x  ";
-	for (int i = 1; i <= boardSize; i++)
-		std::cout << i << " ";
-	std::cout << "\n   --------------------\n";
-
-	for (int i = 0; i < boardSize; i++)
-	{
-		std::cout << i + 1;
-		if (i < 9) std::cout << " |";
-		else std::cout << "|";
-
-		for (int j = 0; j < boardSize; j++)
-		{
-			std::cout << board[i][j] << " ";
-		}
-		std::cout << std::endl;
-	}
+    for (int i = 0; i < boardSize; i++)
+        for (int j = 0; j < boardSize; j++)
+            board[i][j] = WATER;
 }
 
 /*
-	Preconditions:
-	Postconditions:
-	Desc:
+Preconditions: Board must be initialized
+Postconditions: Displays board with coordinates
+Description: Prints the board with row and column numbers
+*/
+void displayBoard(char board[boardSize][boardSize])
+{
+    cout << "   ";
+    for (int col = 1; col <= boardSize; col++)
+        cout << col << " ";
+    cout << "\n  --------------------\n";
+
+    for (int row = 0; row < boardSize; row++)
+    {
+        if (row + 1 < 10) cout << row + 1 << " |";
+        else cout << row + 1 << "|";
+
+        for (int col = 0; col < boardSize; col++)
+        {
+            cout << board[row][col] << " ";
+        }
+        cout << endl;
+    }
+}
+
+/*
+Preconditions: Valid row, col, size, orientation
+Postconditions: Places ship on the board
+Description: Fills board cells with SHIP symbol in given direction
+*/
+void placeShip(char board[boardSize][boardSize], int row, int col, int size, char orientation)
+{
+    if (orientation == 'H')
+    {
+        for (int i = 0; i < size; i++)
+            board[row][col + i] = SHIP;
+    }
+    else
+    {
+        for (int i = 0; i < size; i++)
+            board[row + i][col] = SHIP;
+    }
+}
+
+/*
+Preconditions: Board, starting row/col, size, orientation
+Postconditions: Returns true if ship can be placed
+Description: Checks if placement is valid
 */
 bool canPlaceShip(char board[boardSize][boardSize], int row, int col, int size, char orientation)
 {
-	if (orientation == 'H')
-	{
-		if (col + size > boardSize) //out of bounds
-		{
-			return false;
-		}
-
-		for (int i = 0; i < size; i++)
-		{
-			if (board[row][col + i] != WATER)
-				return false;
-		}
-	}
-	else
-	{
-		if (row + size > boardSize)
-		{
-			return false;
-		}
-		for (int i = 0; i < size; i++)
-		{
-			if (board[row + i][col] != WATER)
-			{
-				return false;
-			}
-		}
-	}
-
-	return true;
-}
-
-void placeShip(char board[boardSize][boardSize], int row, int col, int size, char orientation)
-{
-	if (orientation == 'H' || orientation == 'h')
-	{
-		for (int i = 0; i < size; i++)
-		{
-			board[row][col + i] = SHIP;
-		}
-	}
-	else
-	{
-		for (int i = 0; i < size; i++)
-		{
-			board[row + i][col] = SHIP;
-		}
-	}
-}
-
-void placeComputerShips()
-{
-	int shipSizes[5] = { 5, 4, 3, 3, 2 };
-
-	for (int i = 0; i < 5; i++)
-	{
-		bool placed = false;
-
-		while (!placed) 
-		{
-			int row = rand() % boardSize;
-			int col = rand() % boardSize;
-			char orientation = (rand() % 2 == 0) ? 'H' : 'V';
-
-			if (canPlaceShip(computerBoard, row, col, shipSizes[i], orientation))
-			{
-				placeShip(computerBoard, row, col, shipSizes[i], orientation);
-				placed = true;
-			}
-		}
-	}
-}
-
-void placePlayerShips()
-{
-	int shipSizes[5] = { 5, 4, 3, 3, 2 };
-	std::string shipNames[5] =
-	{
-		"Carrier (5)",
-		"Battleship (4)",
-		"Cruiser (3)",
-		"Submarine (3)",
-		"Destroyer (2)",
-	};
-
-	for (int i = 0; i < 5; i++)
-	{
-		bool placed = false;
-
-		while (!placed)
-		{
-			int row, col;
-			char orientation;
-
-			displayBoard(playerBoard);
-
-			std::cout << "\nPlacing " << shipNames[i] << std::endl;
-			std::cout << "Enter starting column (1-10): ";
-			std::cin >> col;
-			std::cout << "Enter starting row (1-10): ";
-			std::cin >> row;
-			std::cout << "Enter orientation (H for horizontal, V for vertical): ";
-			std::cin >> orientation;
-
-			//converting to 0-based index
-			row--;
-			col--;
-
-			if (row < 0 || row > boardSize || col < 0 || col >= boardSize)
-			{
-				std::cout << "Invalid starting position, try again.\n";
-				continue;
-			}
-
-			if (!canPlaceShip(playerBoard, row, col, shipSizes[i], orientation))
-			{
-				std::cout << "Cannot place ship there, try again.\n";
-				continue;
-			}
-
-			placeShip(playerBoard, row, col, shipSizes[i], orientation);
-			placed = true;
-		}
-	}
+    if (orientation == 'H')
+    {
+        if (col + size > boardSize) return false;
+        for (int i = 0; i < size; i++)
+            if (board[row][col + i] != WATER) return false;
+    }
+    else
+    {
+        if (row + size > boardSize) return false;
+        for (int i = 0; i < size; i++)
+            if (board[row + i][col] != WATER) return false;
+    }
+    return true;
 }
 
 /*
-	Preconditions:
-	Postconditions:
-	Desc:
+Preconditions: Board initialized
+Postconditions: Player places all 5 ships manually
+Description: Prompts user for coordinates and orientation for each ship
+*/
+void placePlayerShips()
+{
+    for (int i = 0; i < 5; i++)
+    {
+        bool placed = false;
+        while (!placed)
+        {
+            cout << "\nPlace your " << shipNames[i] << " (size " << shipSizes[i] << ")\n";
+
+            int x, y;
+            char orientation;
+            cout << "Enter x (column 1-10): ";
+            cin >> x;
+            cout << "Enter y (row 1-10): ";
+            cin >> y;
+            cout << "Enter orientation (H for horizontal, V for vertical): ";
+            cin >> orientation;
+
+            int row = y - 1;
+            int col = x - 1;
+
+            if (row < 0 || row >= boardSize || col < 0 || col >= boardSize)
+            {
+                cout << "Coordinates out of bounds. Try again.\n";
+                continue;
+            }
+
+            if (orientation != 'H' && orientation != 'V')
+            {
+                cout << "Invalid orientation. Try again.\n";
+                continue;
+            }
+
+            if (canPlaceShip(playerBoard, row, col, shipSizes[i], orientation))
+            {
+                placeShip(playerBoard, row, col, shipSizes[i], orientation);
+                displayBoard(playerBoard);
+                placed = true;
+            }
+            else
+            {
+                cout << "Cannot place ship here. Try again.\n";
+            }
+        }
+    }
+}
+
+/*
+Preconditions: Board initialized
+Postconditions: Computer places all 5 ships randomly
+Description: Randomly places computer ships without overlap
+*/
+void placeComputerShips()
+{
+    for (int i = 0; i < 5; i++)
+    {
+        bool placed = false;
+        while (!placed)
+        {
+            int orientation = rand() % 2; // 0=H, 1=V
+            char dir = (orientation == 0) ? 'H' : 'V';
+            int row = rand() % boardSize;
+            int col = rand() % boardSize;
+
+            if (canPlaceShip(computerBoard, row, col, shipSizes[i], dir))
+            {
+                placeShip(computerBoard, row, col, shipSizes[i], dir);
+                placed = true;
+            }
+        }
+    }
+}
+
+/*
+Preconditions: Boards initialized
+Postconditions: Handles game turns until win, loss, or surrender
+Description: Main game loop
 */
 void playingGame()
 {
-	bool isGameOver = false;
+    bool gameOver = false;
 
-	while (!isGameOver)
-	{
-		std::cout << "Your attacks:\n";
-		displayBoard(playerAttackBoard);
+    while (!gameOver)
+    {
+        // Show attack board each turn
+        cout << "\nYour Attack Board:\n";
+        displayBoard(playerAttackBoard);
 
-		int choice;
-		std::cout << "\nChoose an option:\n 1. Fire an attack\n 2. View your board\n 3.Surrender\n";
-		std::cin >> choice;
+        int choice;
+        cout << "\nChoose an option:\n1. Fire an attack\n2. View your board\n3. Surrender\n";
+        cin >> choice;
 
-		switch (choice)
-		{
-		case 1: attack();
-			checkWinLoss(isGameOver);
-			if (isGameOver) 
-				break;
-			computerAttack();
-			checkWinLoss(isGameOver);
-			break;
-		case 2: std::cout << "Your board:\n";
-			displayBoard(playerBoard);
-			break;
-		case 3: surrender();
-			isGameOver = true;
-			break;
-		default:
-			std::cout << "Invalid choice.\n";
-		}
-	}
+        switch (choice)
+        {
+        case 1:
+            attack();
+            checkWinLoss(gameOver);
+            if (gameOver) break;
+
+            computerAttack();
+            checkWinLoss(gameOver);
+            break;
+
+        case 2:
+            cout << "\nYour Board:\n";
+            displayBoard(playerBoard);
+            break;
+
+        case 3:
+            surrender();
+            gameOver = true;
+            break;
+
+        default:
+            cout << "Invalid choice.\n";
+        }
+    }
 }
 
 /*
-	Preconditions:
-	Postconditions:
-	Desc:
+Preconditions: Computer board initialized
+Postconditions: Updates attack board with HIT/MISS
+Description: Player fires at computer ships
 */
 void attack()
 {
-	int row, col;
-	bool hasFired = false; //controls the while loop
+    cout << "\nYour Attack Board:\n";
+    displayBoard(playerAttackBoard);
 
-	std::cout << "Enter the row and column to attack (1-10)" << std::endl;
+    int x, y;
+    bool fired = false;
 
-	while (!hasFired)
-	{
-		std::cin >> col >> row;
-		col--;
-		row--;
+    while (!fired)
+    {
+        cout << "Enter x (column 1-10): ";
+        cin >> x;
+        cout << "Enter y (row 1-10): ";
+        cin >> y;
 
-		if (row < 0 || row >= boardSize || col < 0 || col >= boardSize)
-		{
-			std::cout << "Invalid coordinates.Try again:\n";
-			continue;
-		}
+        int row = y - 1;
+        int col = x - 1;
 
-		if (computerBoard[row][col] == HIT || computerBoard[row][col] == MISS)
-		{
-			std::cout << "You already attacked this location, try again:";
-			continue;
-		}
+        if (row < 0 || row >= boardSize || col < 0 || col >= boardSize)
+        {
+            cout << "Invalid coordinates.\n";
+            continue;
+        }
 
-		if (computerBoard[row][col] == SHIP)
-		{
-			std::cout << "Hit!\n";
-			computerBoard[row][col] = HIT;
-			playerAttackBoard[row][col] = HIT;
-		}
-		else 
-		{
-			std::cout << "Miss!\n";
-			computerBoard[row][col] = MISS;
-			playerAttackBoard[row][col] = MISS;
-		}
+        if (playerAttackBoard[row][col] == HIT || playerAttackBoard[row][col] == MISS)
+        {
+            cout << "You already attacked this location. Try again.\n";
+            continue;
+        }
 
-		hasFired = true;
-	}
-}
+        if (computerBoard[row][col] == SHIP)
+        {
+            cout << "Hit!\n";
+            computerBoard[row][col] = HIT;
+            playerAttackBoard[row][col] = HIT;
+        }
+        else
+        {
+            cout << "Miss!\n";
+            computerBoard[row][col] = MISS;
+            playerAttackBoard[row][col] = MISS;
+        }
 
-void computerAttack()
-{
-	int row, col;
-	bool attacked = false;
-
-	std::cout << "\nComputer is attacking...\n";
-
-	while (!attacked)
-	{
-		row = rand() % boardSize;
-		col = rand() % boardSize;
-
-		if (computerAttackBoard[row][col] == HIT || computerAttackBoard[row][col] == MISS)
-		{
-			continue;
-		}
-
-		if (computerAttackBoard[row][col] == SHIP)
-		{
-			std::cout << "Computer hit your ship at (" << row + 1 << ", " << col + 1 << ")!\n";
-			playerBoard[row][col] = HIT;
-			computerAttackBoard[row][col] = HIT;
-		}
-		else
-		{
-			std::cout << "Computer missed at (" << row + 1 << ", " << col + 1 << ")!\n";
-			computerAttackBoard[row][col] = MISS;
-		}
-
-		attacked = true;
-	}
-}
-
-bool allShipsSunk(char board[boardSize][boardSize])
-{
-	for (int i = 0; i < boardSize; i++)
-	{
-		for (int j = 0; j < boardSize; j++)
-		{
-			if (board[i][j] == SHIP)
-			{
-				return false;
-			}
-		}
-	}
-
-	return true;
-}
-
-void checkWinLoss(bool& gameOver)
-{
-	if (allShipsSunk(computerBoard))
-	{
-		std::cout << "Congrats! All enemy ships have been sunk!\n";
-		gameOver = true;
-	}
-	else if (allShipsSunk(playerBoard))
-	{
-		std::cout << "\n You lost! All your ships have been sunk.\n";
-		gameOver = true;
-	}
+        fired = true;
+    }
 }
 
 /*
-	Preconditions:
-	Postconditions:
-	Desc:
+Preconditions: Player board initialized
+Postconditions: Computer attacks player
+Description: Computer randomly fires at player ships
+*/
+void computerAttack()
+{
+    int row, col;
+    bool attacked = false;
+
+    cout << "\nComputer is attacking...\n";
+
+    while (!attacked)
+    {
+        row = rand() % boardSize;
+        col = rand() % boardSize;
+
+        if (computerAttackBoard[row][col] == HIT || computerAttackBoard[row][col] == MISS)
+            continue;
+
+        if (playerBoard[row][col] == SHIP)
+        {
+            cout << "Computer hit your ship at (x=" << col + 1 << ", y=" << row + 1 << ")!\n";
+            playerBoard[row][col] = HIT;
+            computerAttackBoard[row][col] = HIT;
+        }
+        else
+        {
+            cout << "Computer missed at (x=" << col + 1 << ", y=" << row + 1 << ").\n";
+            computerAttackBoard[row][col] = MISS;
+        }
+
+        attacked = true;
+    }
+
+    cout << "\nYour Board After Computer Attack:\n";
+    displayBoard(playerBoard);
+}
+
+/*
+Preconditions: None
+Postconditions: Handles player surrender
+Description: Ends current game turn
 */
 void surrender()
 {
-	std::cout << "You have surrendered.\n" << std::endl;
+    cout << "You have surrendered.\n";
+}
+
+/*
+Preconditions: Board initialized
+Postconditions: Returns true if all ships are destroyed
+Description: Checks if all ship cells have been hit
+*/
+bool allShipsSunk(char board[boardSize][boardSize])
+{
+    for (int i = 0; i < boardSize; i++)
+        for (int j = 0; j < boardSize; j++)
+            if (board[i][j] == SHIP)
+                return false;
+    return true;
+}
+
+/*
+Preconditions: Boards initialized
+Postconditions: Updates gameOver flag and increments win/loss counters
+Description: Checks for win/loss conditions after each turn
+*/
+void checkWinLoss(bool& gameOver)
+{
+    if (allShipsSunk(computerBoard))
+    {
+        cout << "\nYou win! All enemy ships have been sunk.\n";
+        playerWins++;
+        gameOver = true;
+    }
+    else if (allShipsSunk(playerBoard))
+    {
+        cout << "\nYou lost! All your ships have been sunk.\n";
+        computerWins++;
+        gameOver = true;
+    }
 }
